@@ -1,4 +1,5 @@
 import express from 'express';
+import expressWs from 'express-ws';
 import db from './mongodb/db.js';
 import config from 'config-lite';
 import router from './routes/index.js';
@@ -9,13 +10,14 @@ import path from 'path';
 import history from 'connect-history-api-fallback';
 import chalk from 'chalk';
 import bodyParser from 'body-parser';
+import morgan from 'morgan';
 const fs = require("fs");
 // import Statistic from './middlewares/statistic'
 
 const cluster = require('cluster');
 const numCPUs = require('os').cpus().length;
-var redis = require("redis");  
-var client = redis.createClient(6379, "127.0.0.1");  
+var redis = require("redis");
+var client = redis.createClient(6379, "redis");
 var http=require('http');
 //excel导出文件存放位置， 不存在则创建
 fs.exists(config.device_dir, function(exists) {
@@ -28,6 +30,35 @@ fs.exists(config.client_dir, function(exists) {
 });
 
 const app = express();
+expressWs(app)
+
+// 设置访问日志
+var accessLogStream = fs.createWriteStream(path.join(__dirname, 'logs/node.log'), { flags: 'a' })
+app.use(morgan('combined', { stream: accessLogStream }))
+
+// 建立 WebSocket 服务
+app.ws('/ws/wifidogx', function (ws, req) {
+    console.log('connect success')
+    console.log(ws)
+
+    // 使用 ws 的 send 方法向连接另一端的客户端发送数据
+    // ws.send('connect to express server with WebSocket success')
+
+    // 使用 on 方法监听事件
+    //   message 事件表示从另一段（服务端）传入的数据
+    ws.on('message', function (msg) {
+        console.log(`receive message ${msg}`)
+        ws.send('default response')
+    })
+
+    // close 事件表示客户端断开连接时执行的回调函数
+    ws.on('close', function (e) {
+        console.log('close connection')
+        clearInterval(timer)
+        timer = undefined
+    })
+})
+
 
 app.all('*', (req, res, next) => {
 	res.header("Access-Control-Allow-Origin", req.headers.Origin || req.headers.origin || '*');
@@ -125,14 +156,14 @@ function sendoffline(gwid){
 	    req.on('data',function(data){
 		    html += data;
 	    });
-        
+
 	    req.on('end',function(){
 		    console.info(html);
 	    });
     });
 }
 
-function subscribeRedisData() {   
+function subscribeRedisData() {
     client.on("message", function (channel, message) {
         //console.log("expired:" + message);
         sendoffline(message);

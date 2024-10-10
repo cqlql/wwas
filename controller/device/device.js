@@ -13,7 +13,7 @@ const moment = require('moment');
 const schedule = require('node-schedule');
 //引入redis
 var redism = require("redis");
-var redis = redism.createClient(6379, 'localhost', {});
+var redis = redism.createClient(6379, 'redis', {});
 //引入事件模块
 const events = require("events");
 var outtime=120;
@@ -350,7 +350,7 @@ class deviceHandle {
 
         console.log('device list end');
     }
-    
+
     async doCheckRedis(gwid){
        return new Promise(function(resolve, reject){
               redis.get([gwid], function(error, val) {
@@ -362,7 +362,7 @@ class deviceHandle {
               });
        });
     }
-    
+
     async doSetRedis(gwid){
        return new Promise(function(resolve, reject){
               redis.set([gwid, 'true', 'EX', outtime], function(error, val) {
@@ -417,7 +417,7 @@ class deviceHandle {
             res.send({ ret_code: 1002, ret_msg: 'FAILED', extra: '用户输入参数无效' });
         }
     }
-    
+
     async updateDeviceOffline(req) {
         try {
             var gwId = req.query.gw_id;
@@ -501,8 +501,8 @@ class deviceHandle {
 			}
 		} else {
 			var mytime = new Date();
-			var gwSetting = { 
-					'gwId': gwId, 
+			var gwSetting = {
+					'gwId': gwId,
 					'channelPath': "wificoin",
 					'auth': 1,
 					'lastTime':mytime.getTime()

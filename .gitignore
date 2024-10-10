@@ -12,3 +12,12 @@ yarn-debug.log*
 yarn-error.log*
 .*.swp
 .*.swo
+
+logs/
+
+redis/*
+!redis/redis.conf
+
+mongodb/*
+!mongodb/db.js
+!mongodb/mongod.yaml

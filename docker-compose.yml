@@ -1,0 +1,71 @@
+services:
+  node:
+    image: "node:10"
+    container_name: node
+    restart: always
+    working_dir: /home/node/app
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - ./:/home/node/app
+    expose:
+      - "8081"
+    ports: # use if it is necessary to expose the container to the host machine
+      - "8001:8001"
+    command: "npm run dev"
+    # networks:
+    #   - node-network
+
+  redis:
+    image: "redis:3"
+    container_name: redis
+    restart: always
+    ports:
+      - '6379:6379'
+    volumes:
+      - ./redis/data:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./logs:/logs
+    #配置文件启动
+    command: redis-server /usr/local/etc/redis/redis.conf
+    # networks:
+    #   - node-network
+
+  redisinsight:
+    image: redis/redisinsight
+    container_name: redisinsight
+    ports:
+      - 5540:5540
+    volumes:
+      - ./redis/redisinsight/data:/data
+
+# networks:
+#    node-network:
+  mongo:
+    image: mongo:5
+    container_name: mongodb
+    # restart: always
+    environment:
+      MONGO_INITDB_DATABASE: wfc
+    #   MONGO_INITDB_ROOT_USERNAME: root
+    #   MONGO_INITDB_ROOT_PASSWORD: example
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./mongodb/data:/data/db
+      - ./logs/mongod.log:/data/logs/mongod.log
+      - ./mongodb/mongod.yaml:/etc/mongo/mongod.conf
+    command: --config /etc/mongo/mongod.conf
+
+  mongo-express:
+    image: mongo-express
+    container_name: mongo-express
+    # restart: always
+    ports:
+      - 8081:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: example
+    #   ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017
+      ME_CONFIG_MONGODB_URL: mongodb://mongo:27017
+      ME_CONFIG_BASICAUTH: false
